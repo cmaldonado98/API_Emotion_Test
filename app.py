@@ -27,6 +27,8 @@ imags = sqlalchemy.Table(
     sqlalchemy.Column("testId",sqlalchemy.String),
     sqlalchemy.Column("resultado",sqlalchemy.String),
     sqlalchemy.Column("tiempo", sqlalchemy.String),
+    sqlalchemy.Column("pregunta", sqlalchemy.String),
+    sqlalchemy.Column("calificacion", sqlalchemy.String),
 )
 
 engine = sqlalchemy.create_engine(
@@ -42,6 +44,8 @@ class ImgList(BaseModel):
     testId : str
     resultado : str
     tiempo : str
+    pregunta : str
+    calificacion : str
 
 class TestList(BaseModel):
     response : str
@@ -49,6 +53,9 @@ class TestList(BaseModel):
 class ImgEntry(BaseModel):    
     base64 : str = Field(..., example = "asdk9082189127jksajkdas")
     testId : str = Field(..., example = "5")
+    tiempo : str = Field(..., example = "00:01")
+    pregunta : str = Field(..., example = "Pregunta 1")
+    calificacion : str = Field(..., example = "Excelente")
 
 class TestEntry(BaseModel):
     img : str = Field(..., example = "hdasdklasdkla=base64")
@@ -126,7 +133,9 @@ async def register_img(imag: ImgEntry):
         base64 = imag.base64,
         testId = imag.testId,
         resultado = detect_faces(imag.base64),
-        tiempo = gDate,
+        tiempo = imag.tiempo,
+        pregunta = imag.pregunta,
+        calificacion = imag.calificacion,
     )
 
     await database.execute(query)
@@ -137,11 +146,13 @@ async def register_img(imag: ImgEntry):
     }
 
 ## Rekognition Detect faces
+
+emocionesDiccionario = {'CALM':'CALMADO','SURPRISED':'SORPRENDIDO','FEAR':'MIEDO','ANGRY':'ENOJADO','CONFUSED':'CONFUNDIDO','SAD':'TRISTE','HAPPY':'FELIZ','DISGUSTED':'DISGUSTADO'}
 def detect_faces(photo):
 
     client = boto3.client('rekognition',
-        aws_access_key_id="AKIAVPWCKPCTAWMUXCCR",
-        aws_secret_access_key="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",
+        aws_access_key_id="AKIAZ2HA54RRYNUCVXVO",
+        aws_secret_access_key="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",
         region_name="us-east-1"
 
     )
@@ -158,5 +169,7 @@ def detect_faces(photo):
     for faceDetail in response['FaceDetails']:
         respuesta = []        
         for emotion in faceDetail['Emotions']:            
-            respuesta.append([emotion['Type'] , emotion['Confidence']])
-    return str(respuesta)
+            respuesta.append([emotion['Type'] , float(emotion['Confidence'])])
+            break
+        # respuesta = str(faceDetail['Emotions']['Type']) + str(faceDetail['Emotions']['Confidence'])
+    return str(emocionesDiccionario.get(str(respuesta[0][0]),"SIN EMOCIÓN") + " = " + str(float(respuesta[0][1]))[0:2] + "%")
