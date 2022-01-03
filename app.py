@@ -11,6 +11,7 @@ from starlette.responses import JSONResponse
 from starlette.routing import request_response
 import boto3
 import base64
+import os
 
 
 
@@ -41,6 +42,14 @@ metadata.create_all(engine)
 class ImgList(BaseModel):
     idImg : str
     base64 : str
+    testId : str
+    resultado : str
+    tiempo : str
+    pregunta : str
+    calificacion : str
+
+class ImgTableList(BaseModel):
+    idImg : str    
     testId : str
     resultado : str
     tiempo : str
@@ -89,7 +98,7 @@ def read_root():
     return {"Welcome":"Welcome to my Rest API"}
 
 #LISTAR TODAS LAS IMAGENES POR TEST ID
-@app.get("/resultadosID/{testId2}")
+@app.get("/resultadosID/{testId2}", response_model = List[ImgTableList])
 async def find_all_imgs(testId2 : str):
     query = imags.select().where(imags.c.testId == testId2)
     return await database.fetch_all(query)
@@ -151,9 +160,9 @@ emocionesDiccionario = {'CALM':'CALMADO','SURPRISED':'SORPRENDIDO','FEAR':'MIEDO
 def detect_faces(photo):
 
     client = boto3.client('rekognition',
-        aws_access_key_id="AKIAZ2HA54RRYNUCVXVO",
-        aws_secret_access_key="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",
-        region_name="us-east-1"
+        aws_access_key_id=os.environ['AWS_ACCESS_KEY_ID'],
+        aws_secret_access_key=os.environ['AWS_SECRET_ACCES_KEY'],
+        region_name=os.environ['AWS_REGION']
 
     )
     photo = base64.b64decode(photo[23:])
