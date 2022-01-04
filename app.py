@@ -30,6 +30,7 @@ imags = sqlalchemy.Table(
     sqlalchemy.Column("tiempo", sqlalchemy.String),
     sqlalchemy.Column("pregunta", sqlalchemy.String),
     sqlalchemy.Column("calificacion", sqlalchemy.String),
+    sqlalchemy.Column("producto", sqlalchemy.String),
 )
 
 engine = sqlalchemy.create_engine(
@@ -47,6 +48,7 @@ class ImgList(BaseModel):
     tiempo : str
     pregunta : str
     calificacion : str
+    producto : str
 
 class ImgTableList(BaseModel):
     idImg : str    
@@ -54,6 +56,11 @@ class ImgTableList(BaseModel):
     resultado : str
     tiempo : str
     pregunta : str
+    calificacion : str
+    producto : str
+
+class DashboardList(BaseModel):    
+    resultado : str
     calificacion : str
 
 class TestList(BaseModel):
@@ -65,6 +72,7 @@ class ImgEntry(BaseModel):
     tiempo : str = Field(..., example = "00:01")
     pregunta : str = Field(..., example = "Pregunta 1")
     calificacion : str = Field(..., example = "Excelente")
+    producto : str = Field(..., example = "Hamburguesa")
 
 class TestEntry(BaseModel):
     img : str = Field(..., example = "hdasdklasdkla=base64")
@@ -101,6 +109,18 @@ def read_root():
 @app.get("/resultadosID/{testId2}", response_model = List[ImgTableList])
 async def find_all_imgs(testId2 : str):
     query = imags.select().where(imags.c.testId == testId2)
+    return await database.fetch_all(query)
+
+#LISTAR TODAS LAS IMAGENES POR PRODUCTO
+@app.get("/dashboardProducto/{producto2}", response_model = List[DashboardList])
+async def find_all_imgs(producto2 : str):
+    query = imags.select().where(imags.c.producto == producto2)
+    return await database.fetch_all(query)
+
+#LISTAR TODAS LAS IMAGENES POR PRODUCTO Y PREGUNTA
+@app.get("/dashboardProducto2/{producto2}/{pregunta2}", response_model = List[DashboardList])
+async def find_all_imgs(producto2 : str, pregunta2 : str):
+    query = imags.select().where(imags.c.producto == producto2).where(imags.c.pregunta == pregunta2)
     return await database.fetch_all(query)
 
 #LISTAR TODAS LAS IMAGENES
@@ -145,6 +165,7 @@ async def register_img(imag: ImgEntry):
         tiempo = imag.tiempo,
         pregunta = imag.pregunta,
         calificacion = imag.calificacion,
+        producto = imag.producto,
     )
 
     await database.execute(query)
